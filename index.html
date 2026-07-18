@@ -816,11 +816,9 @@ img#voice { margin-top: 4em; width: 50em;}
 <style>
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 130px; /* Offset for sticky header menu height */
   }
   ilw-header {
-    position: sticky !important;
-    top: 0 !important;
+    position: relative;
     z-index: 9999 !important;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06) !important;
     display: block !important;
@@ -841,14 +839,38 @@ img#voice { margin-top: 4em; width: 50em;}
   }
 </style>
 <script>
+  function updateHeaderStickyOffset() {
+    const header = document.querySelector('ilw-header');
+    const menu = document.querySelector('ilw-header-menu');
+    if (header && menu) {
+      const headerHeight = header.offsetHeight;
+      const menuHeight = menu.offsetHeight;
+      const offset = headerHeight - menuHeight;
+      if (offset > 0) {
+        header.style.setProperty('position', 'sticky', 'important');
+        header.style.setProperty('top', `-${offset}px`, 'important');
+        header.style.setProperty('z-index', '9999', 'important');
+        
+        // Offset scroll target by the menu height so headers aren't cut off
+        document.documentElement.style.setProperty('scroll-padding-top', `${menuHeight + 20}px`, 'important');
+      }
+    }
+  }
+
   window.addEventListener('DOMContentLoaded', () => {
+    // Run offset calculation after component has time to render
+    setTimeout(updateHeaderStickyOffset, 300);
+    window.addEventListener('resize', updateHeaderStickyOffset);
+
     const sections = document.querySelectorAll('.isg-page-section');
     const navLinks = document.querySelectorAll('ilw-header-menu slot[name="navigation"] a, ilw-header-menu a');
     
     // Add scroll spy to highlight the active menu item
     window.addEventListener('scroll', () => {
       let currentSectionId = '';
-      const scrollPos = window.scrollY + 180; // Offset for detection trigger
+      const menu = document.querySelector('ilw-header-menu');
+      const menuHeight = menu ? menu.offsetHeight : 100;
+      const scrollPos = window.scrollY + menuHeight + 40; // Offset for detection trigger
 
       sections.forEach(section => {
         const top = section.offsetTop;
