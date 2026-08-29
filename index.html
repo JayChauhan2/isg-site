@@ -923,11 +923,12 @@ img#voice { margin-top: 4em; width: 50em;}
 
   window.addEventListener('DOMContentLoaded', () => {
     const viewButtons = document.querySelectorAll('.view-button');
-    const savedView = localStorage.getItem('isg-site-view') || 'student';
+    let savedView = 'student';
+    try { savedView = localStorage.getItem('isg-site-view') || 'student'; } catch (error) { /* Safari file URLs may disable storage. */ }
     const setView = (view) => {
       document.body.dataset.siteView = view;
       viewButtons.forEach(button => button.classList.toggle('is-active', button.dataset.view === view));
-      localStorage.setItem('isg-site-view', view);
+      try { localStorage.setItem('isg-site-view', view); } catch (error) { /* Keep switching functional without storage. */ }
     };
     setView(savedView);
     viewButtons.forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
