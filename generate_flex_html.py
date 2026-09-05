@@ -97,9 +97,12 @@ def main():
 
     blocks = [
         '<details class="season-block" open="">',
-        '<summary>Spring 2026</summary>',
-        '<div class="season-content">',
-        '<p class="note">(Based on Data Collected Spring 2026)<br/>Instructors\' names are listed by course number (ascending) within each department. <strong>T.A.</strong> indicates Teaching Assistant.</p>',
+        '    <summary>Spring 2026</summary>',
+        '    <div class="season-content">',
+        '        <p class="note">',
+        '            (Based on Data Collected Spring 2026)<br>',
+        '            Instructors\' names are listed by course number (ascending) within each department. &nbsp;<strong>T.A.</strong> indicates Teaching Assistant.',
+        '        </p>',
     ]
     for department in sorted(departments):
         people = departments[department]
@@ -109,10 +112,15 @@ def main():
             course_list = ', '.join(str(number) for number in sorted(set(courses)))
             marker = 'T.A. ' if role == 'TA' else ''
             lines.append(f'{escape(name)} - {marker}{course_list}')
-        blocks.append(f'<details><summary style="cursor:pointer;font-size:14px;padding:2px 8px;"><strong>{escape(department)}</strong></summary>')
-        blocks.append(f'<p style="font-size:14px;line-height:1.6;margin:5px 0;padding-left:20px;">{"<br/>".join(lines)}</p></details>')
-    blocks.extend(['</div>', '</details>', ''])
-    OUTPUT.write_text(''.join(blocks), encoding='utf-8')
+        blocks.append('        <details>')
+        blocks.append(f'            <summary style="cursor:pointer;font-size:14px;padding:2px 8px;"><strong>{escape(department)}</strong></summary>')
+        blocks.append('            <p style="font-size:14px;line-height:1.6;margin:5px 0;padding-left:20px;">')
+        for index, line in enumerate(lines):
+            suffix = '<br>' if index < len(lines) - 1 else ''
+            blocks.append(f'                {line}{suffix}')
+        blocks.extend(['            </p>', '        </details>'])
+    blocks.extend(['    </div>', '</details>', ''])
+    OUTPUT.write_text('\n'.join(blocks), encoding='utf-8')
     print(f'Wrote {OUTPUT} with {len(departments)} departments.')
 
 
