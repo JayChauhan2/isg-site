@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from html import escape
 from pathlib import Path
-from re import match
+from re import findall
 from zipfile import ZipFile
 from xml.etree import ElementTree as ET
 
@@ -18,7 +18,7 @@ DEPARTMENTS = {
     'AIS': 'American Indian Studies Prgrm', 'ALEC': 'Agricultural Leadership, Education, and Communications Program',
     'ANSC': 'Animal Sciences', 'ANTH': 'Anthropology', 'ARAB': 'Arabic', 'ARCH': 'Architecture',
     'ART': 'Art', 'ARTD': 'Art--Design', 'ARTE': 'Art--Education', 'ARTF': 'Art--Foundation',
-    'ARTH': 'Art--History', 'ARTJ': 'Art--Studio', 'ARTS': 'Art--Studio',
+    'ARTH': 'Art--History', 'ARTJ': 'Japan House', 'ARTS': 'Art--Studio',
     'ASRM': 'Actuarial Science and Risk Management', 'ASTR': 'Astronomy', 'ATMS': 'Atmospheric Sciences',
     'BADM': 'Business Administration', 'BASQ': 'Basque', 'BCOG': 'Brain and Cognitive Science',
     'BDI': 'Business Data and Innovation', 'BIOC': 'Biochemistry', 'BIOE': 'Bioengineering',
@@ -27,37 +27,37 @@ DEPARTMENTS = {
     'CHBE': 'Chemical and Biomolecular Engineering', 'CHEM': 'Chemistry', 'CHIN': 'Chinese',
     'CHP': 'Campus Honors Program', 'CI': 'Curriculum and Instruction', 'CLCV': 'Classical Civilization',
     'CMN': 'Communication', 'CPSC': 'Crop Sciences', 'CS': 'Computer Science',
-    'CSE': 'Computer Science Education', 'CW': 'Creative Writing', 'CWL': 'Comparative and World Literature',
+    'CSE': 'Computational Science and Engineering', 'CW': 'Creative Writing', 'CWL': 'Comparative and World Literature',
     'DANC': 'Dance', 'EALC': 'East Asian Languages and Cultures', 'ECE': 'Electrical and Computer Engineering',
     'ECON': 'Economics', 'EDUC': 'Education', 'EIL': 'English as an International Language',
     'ENG': 'Engineering', 'ENGL': 'English', 'ENVS': 'Environmental Studies',
     'EPOL': 'Education Policy, Organization and Leadership', 'EPSY': 'Educational Psychology',
-    'ERAM': 'Earth, Society, and Environmental Sustainability', 'ESE': 'Earth, Society, and Environmental Sustainability',
-    'ESL': 'English as a Second Language', 'ETMA': 'Educational Technology', 'EXP': 'Experimental Psychology',
+    'ERAM': 'Education Research and Methods', 'ESE': 'Earth, Society, and Environmental Sustainability',
+    'ESL': 'English as a Second Language', 'ETMA': 'Engineering Technology and Management for Agricultural Systems', 'EXP': 'EXP',
     'FAA': 'Fine and Applied Arts', 'FIN': 'Finance', 'FR': 'French',
     'FSHN': 'Food Science and Human Nutrition', 'GC': 'General Curriculum', 'GEOL': 'Geology',
     'GER': 'German', 'GGIS': 'Geography & Geographic Information Science', 'GLBL': 'Global Studies',
-    'GRK': 'Greek', 'GRKM': 'Greek and Roman Classics', 'GSD': "Gender and Women's Studies",
+    'GRK': 'Greek', 'GRKM': 'Greek (Modern)', 'GSD': 'Game Studies and Design',
     'GWS': "Gender and Women's Studies", 'HDFS': 'Human Development and Family Studies',
-    'HIST': 'History', 'HK': 'Health and Kinesiology', 'HORT': 'Horticulture', 'HT': 'History of Technology',
-    'IB': 'Integrative Biology', 'IE': 'Industrial Engineering', 'INFO': 'Information Sciences',
-    'IS': 'Information Systems', 'ITAL': 'Italian', 'JAPN': 'Japanese', 'JOUR': 'Journalism',
+    'HIST': 'History', 'HK': 'Health and Kinesiology', 'HORT': 'Horticulture', 'HT': 'Health Technology',
+    'IB': 'Integrative Biology', 'IE': 'Industrial Engineering', 'INFO': 'Illinois Informatics Institute',
+    'IS': 'Information Sciences', 'ITAL': 'Italian', 'JAPN': 'Japanese', 'JOUR': 'Journalism',
     'KOR': 'Korean', 'LA': 'Landscape Architecture', 'LAS': 'Liberal Arts and Sciences',
     'LAST': 'Latin American and Caribbean Studies', 'LAT': 'Latin', 'LAW': 'Law', 'LEAD': 'Leadership',
     'LER': 'Labor and Employment Relations', 'LING': 'Linguistics', 'LLS': 'Latina/Latino Studies',
     'MACS': 'Media and Cinema Studies', 'MATH': 'Mathematics', 'MBA': 'MBA Program',
     'MCB': 'Molecular and Cellular Biology', 'ME': 'Mechanical Engineering', 'MILS': 'Military Science',
-    'MSE': 'Materials Science and Engineering', 'MUS': 'Music', 'MUSC': 'Music', 'MUSE': 'Music Education',
-    'NE': 'Nuclear, Plasma, and Radiological Engineering', 'NPRE': 'Nuclear, Plasma, and Radiological Engineering',
+    'MSE': 'Materials Science and Engineering', 'MUS': 'Music', 'MUSC': 'Music', 'MUSE': 'Museum Studies',
+    'NE': 'NE', 'NPRE': 'Nuclear, Plasma, and Radiological Engineering',
     'NRES': 'Natural Resources and Environmental Sciences', 'NUTR': 'Nutrition', 'PATH': 'Pathobiology',
-    'PHIL': 'Philosophy', 'PHYS': 'Physics', 'POL': 'Political Science', 'PORT': 'Portuguese',
+    'PHIL': 'Philosophy', 'PHYS': 'Physics', 'POL': 'Polish', 'PORT': 'Portuguese',
     'PS': 'Political Science', 'PSYC': 'Psychology', 'REES': 'Russian, East European, and Eurasian Studies',
     'REL': 'Religion', 'RHET': 'Rhetoric', 'RST': 'Recreation, Sport, and Tourism', 'RUSS': 'Russian',
-    'SAME': 'Systems Engineering and Design', 'SBC': 'Strategic Brand Communication', 'SCAN': 'Scandinavian',
+    'SAME': 'South Asian and Middle Eastern Studies', 'SBC': 'Strategic Brand Communication', 'SCAN': 'Scandinavian',
     'SE': 'Systems Engineering and Design', 'SHS': 'Speech and Hearing Science', 'SLAV': 'Slavic',
-    'SLCL': 'Slavic', 'SOC': 'Sociology', 'SOCW': 'Social Work', 'SPAN': 'Spanish',
+    'SLCL': 'School of Literatures, Cultures, and Linguistics', 'SOC': 'Sociology', 'SOCW': 'Social Work', 'SPAN': 'Spanish',
     'SPED': 'Special Education', 'STAT': 'Statistics', 'TAM': 'Theoretical and Applied Mechanics',
-    'TE': 'Teacher Education', 'THEA': 'Theatre', 'TRST': 'Tourism', 'TURK': 'Turkish',
+    'TE': 'Technology Entrepreneur Ctr', 'THEA': 'Theatre', 'TRST': 'Translation Studies', 'TURK': 'Turkish',
     'UP': 'Urban & Regional Planning', 'VCM': 'Vet Clinical Medicine', 'VM': 'Veterinary Medicine',
 }
 
@@ -83,17 +83,25 @@ def main():
     departments = {}
     for row in workbook_rows():
         course = row.get('B', '')
-        first = match(r'([^ ]+)\s+(\d+)', course)
-        if not first:
+        # The first subject is the controlling department.  Retain every course
+        # number in a joint listing (for example, SPED 526 / SPED 566) while
+        # keeping the entry in that controlling department only.
+        course_codes = findall(r'([A-Z]+)\s+(\d+)', course.split(',', 1)[0])
+        if not course_codes:
             raise ValueError(f'Could not parse course: {course}')
-        code, number = first.groups()
+        code, _ = course_codes[0]
         department = DEPARTMENTS.get(code, code)
         given = row.get('D', '')
         family = row.get('E', '')
         name = family if given in ('', '-') else f"{family}, {given[:1]}"
         role = 'TA' if row.get('G') == 'TA' else 'Instructor'
-        key = (name, role)
-        departments.setdefault(department, OrderedDict()).setdefault(key, []).append(int(number))
+        # NetID is used only as an internal grouping key: it prevents people
+        # who share the same public "Family, G" display name from being merged.
+        # It is never written to the generated public HTML.
+        netid = row.get('F', '')
+        key = (netid, name, role)
+        courses = departments.setdefault(department, OrderedDict()).setdefault(key, [])
+        courses.extend(int(number) for _, number in course_codes)
 
     blocks = [
         '<details class="season-block" open="">',
@@ -106,9 +114,12 @@ def main():
     ]
     for department in sorted(departments):
         people = departments[department]
-        ordered = sorted(people.items(), key=lambda item: (min(item[1]), list(people).index(item[0])))
+        # Match the Fall 2025 convention: when the course number ties, sort
+        # alphabetically by displayed name.  NetID makes identical display
+        # names deterministic without exposing it publicly.
+        ordered = sorted(people.items(), key=lambda item: (min(item[1]), item[0][1].casefold(), item[0][0].casefold()))
         lines = []
-        for (name, role), courses in ordered:
+        for (_, name, role), courses in ordered:
             course_list = ', '.join(str(number) for number in sorted(set(courses)))
             marker = 'T.A. ' if role == 'TA' else ''
             lines.append(f'{escape(name)} - {marker}{course_list}')
